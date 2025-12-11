@@ -10,4 +10,7 @@ urlpatterns = [
     path('logout/', views.logout, name='logout'),
     path('user/', views.profile, name='profile'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('sektor/', views.sektor, name='sektor'),
+    path('send-sms/', views.send_sms_code, name='send_sms'),
+    path('check-sms/', views.check_sms_code, name='check_sms'),
 ]

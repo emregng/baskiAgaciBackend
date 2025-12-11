@@ -4,8 +4,11 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User
+from .models import User,Sector
 from .serializers import RegisterSerializer, UserSerializer
+from django.utils import timezone
+import random
+from datetime import timedelta
 
 
 @api_view(['POST'])
@@ -26,11 +29,7 @@ def register(request):
             }
         }, status=status.HTTP_201_CREATED)
     
-    return Response({
-        'success': False,
-        'message': 'Kayıt başarısız',
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
+    return Response({'success': False, 'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])
@@ -98,3 +97,42 @@ def logout(request):
 def profile(request):
     serializer = UserSerializer(request.user)
     return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def sektor(request):
+    sektor = Sector.objects.filter(is_active=True).values('id', 'name')
+    return Response(list(sektor))
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def send_sms_code(request):
+    user = request.user
+    code = str(random.randint(100000, 999999))
+    user.sms_code = code
+    user.sms_code_created = timezone.now()
+    user.save()
+    # Burada gerçek SMS gönderimi yapılmalı (ör: Twilio, Netgsm, vs.)
+    print(f"SMS code for {user.phone_number}: {code}")  # Sadece test için
+    return Response({'success': True, 'message': 'SMS kodu gönderildi.'})
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def check_sms_code(request):
+    user = request.user
+    code = request.data.get('code')
+    if not code:
+        return Response({'success': False, 'message': 'Kod gerekli.'}, status=status.HTTP_400_BAD_REQUEST)
+    if not user.sms_code or not user.sms_code_created:
+        return Response({'success': False, 'message': 'Kod gönderilmemiş.'}, status=status.HTTP_400_BAD_REQUEST)
+    if timezone.now() > user.sms_code_created + timedelta(minutes=10):
+        return Response({'success': False, 'message': 'Kodun süresi doldu.'}, status=status.HTTP_400_BAD_REQUEST)
+    if user.sms_code != code:
+        return Response({'success': False, 'message': 'Kod yanlış.'}, status=status.HTTP_400_BAD_REQUEST)
+    user.is_phone_verified = True
+    user.sms_code = None
+    user.sms_code_created = None
+    user.save()
+    return Response({'success': True, 'message': 'Telefon doğrulandı.'})
