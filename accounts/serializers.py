@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import User,Sector
+from .models import User,Sector,City, District
+
 from company.models import Company
 from packages.serializers import UserPackageSerializer
 
@@ -43,12 +44,14 @@ class RegisterSerializer(serializers.ModelSerializer):
     fullName = serializers.CharField(write_only=True)
     phone = serializers.CharField(write_only=True)
     companySektor = serializers.CharField(write_only=True)
+    city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), required=False, allow_null=True)
+    district = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(), required=False, allow_null=True)
     
     class Meta:
         model = User
         fields = (
             'email', 'username', 'password', 'password_confirm',
-            'companyName', 'fullName', 'phone', 'companySektor'
+            'companyName', 'fullName', 'phone', 'companySektor','city','district'
         )
     
     def validate(self, data):
@@ -64,6 +67,8 @@ class RegisterSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         validated_data.pop('password_confirm')
         full_name = validated_data.pop('fullName')
+        city = validated_data.pop('city', None)
+        district = validated_data.pop('district', None)
         first_name, last_name = '', ''
         if ' ' in full_name:
             first_name, last_name = full_name.split(' ', 1)
@@ -87,6 +92,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             last_name=last_name,
             is_phone_verified=False,
             is_email_verified=False,
+            city=city,
+            district=district
         )
         user.phone = validated_data['phone']
         user.company = company
@@ -102,3 +109,20 @@ class RegisterSerializer(serializers.ModelSerializer):
         # SMS gönderimini burada entegre edebilirsiniz
 
         return user
+    
+
+
+
+
+class DistrictSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = District
+        fields = ('id', 'name')
+
+class CitySerializer(serializers.ModelSerializer):
+    districts = DistrictSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = City
+        fields = ('id', 'name', 'code', 'districts')
+    

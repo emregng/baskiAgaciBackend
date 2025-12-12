@@ -13,4 +13,6 @@ urlpatterns = [
     path('sektor/', views.sektor, name='sektor'),
     path('send-sms/', views.send_sms_code, name='send_sms'),
     path('check-sms/', views.check_sms_code, name='check_sms'),
+    path('city/', views.city_list, name='city_list'),
+    path('district/<int:city_id>/', views.district_list, name='district_list'),
 ]

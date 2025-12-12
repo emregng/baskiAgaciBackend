@@ -4,11 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User,Sector
-from .serializers import RegisterSerializer, UserSerializer
+from .models import User,Sector,City,District
+from .serializers import RegisterSerializer, UserSerializer,CitySerializer,DistrictSerializer
 from django.utils import timezone
 import random
 from datetime import timedelta
+from .serializers import CitySerializer,DistrictSerializer
 
 
 @api_view(['POST'])
@@ -136,3 +137,20 @@ def check_sms_code(request):
     user.sms_code_created = None
     user.save()
     return Response({'success': True, 'message': 'Telefon doğrulandı.'})
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def city_list(request):
+    cities = City.objects.all().order_by('name')
+    serializer = CitySerializer(cities, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def district_list(request, city_id):
+    districts = District.objects.filter(city_id=city_id).order_by('name')
+    serializer = DistrictSerializer(districts, many=True)
+    return Response(serializer.data)

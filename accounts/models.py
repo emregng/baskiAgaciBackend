@@ -4,6 +4,21 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+
+class City(models.Model):
+    name = models.CharField(max_length=100)
+    code = models.PositiveIntegerField(unique=True)  # sehir_id
+
+    def __str__(self):
+        return self.name
+
+class District(models.Model):
+    city = models.ForeignKey(City, on_delete=models.CASCADE, related_name='districts')
+    name = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.city.name} - {self.name}"
+    
 class Sector(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
@@ -18,6 +33,8 @@ class User(AbstractUser):
     last_name = models.CharField(max_length=150,  blank=True, null=True)
     full_name = models.CharField(max_length=150,  blank=True, null=True)
     phone = models.CharField(max_length=60, unique=True, blank=True, null=True)
+    city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True, blank=True)
+    district = models.ForeignKey(District, on_delete=models.SET_NULL, null=True, blank=True)
     groups = models.ManyToManyField(
         'auth.Group',
         related_name='custom_user_set',
