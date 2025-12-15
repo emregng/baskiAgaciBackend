@@ -15,4 +15,6 @@ urlpatterns = [
     path('check-sms/', views.check_sms_code, name='check_sms'),
     path('city/', views.city_list, name='city_list'),
     path('district/<int:city_id>/', views.district_list, name='district_list'),
+    path('get-company-profile/', views.get_company_profile, name='get-company-profile'),
+    path('update-profile/', views.update_profile, name='update-profile'),
 ]

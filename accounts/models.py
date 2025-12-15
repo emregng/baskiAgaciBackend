@@ -30,6 +30,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True, verbose_name='Email')
     username = models.CharField(max_length=150, unique=True, blank=True, null=True)
     first_name = models.CharField(max_length=150,  blank=True, null=True)
+    company = models.ForeignKey('company.Company', on_delete=models.SET_NULL, null=True, blank=True)
     last_name = models.CharField(max_length=150,  blank=True, null=True)
     full_name = models.CharField(max_length=150,  blank=True, null=True)
     phone = models.CharField(max_length=60, unique=True, blank=True, null=True)

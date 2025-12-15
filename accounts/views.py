@@ -154,3 +154,20 @@ def district_list(request, city_id):
     districts = District.objects.filter(city_id=city_id).order_by('name')
     serializer = DistrictSerializer(districts, many=True)
     return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_company_profile(request):
+    serializer = UserSerializer(request.user)
+    return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+
+@api_view(['PUT'])
+@permission_classes([IsAuthenticated])
+def update_profile(request):
+    serializer = RegisterSerializer(request.user, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response({'success': True, 'user': UserSerializer(request.user).data})
+    return Response({'success': False, 'errors': serializer.errors}, status=400)
