@@ -25,6 +25,11 @@ urlpatterns = [
     path('packages/', include('packages.urls')),
     path('media/', include('media.urls')),
     path('company/', include('company.urls')),
+    path('payment/', include('payment.urls')),
+    path('demands/', include('demands.urls')),
+
+
+    
 ]
 
 if settings.DEBUG:
