@@ -5,6 +5,7 @@ from rest_framework import serializers
 from .models import CompanyMedia, Company
 from media.models import Media
 
+
 class CompanyMediaSerializer(serializers.ModelSerializer):
     company = serializers.PrimaryKeyRelatedField(read_only=True)
     media = serializers.PrimaryKeyRelatedField(read_only=True)

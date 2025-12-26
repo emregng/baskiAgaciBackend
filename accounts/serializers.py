@@ -71,12 +71,13 @@ class RegisterSerializer(serializers.ModelSerializer):
     companySektor = serializers.CharField(write_only=True)
     city = serializers.PrimaryKeyRelatedField(queryset=City.objects.all(), required=False, allow_null=True)
     district = serializers.PrimaryKeyRelatedField(queryset=District.objects.all(), required=False, allow_null=True)
-    
+    address = serializers.CharField(write_only=True, required=False, allow_blank=True)
+
     class Meta:
         model = User
         fields = (
             'email', 'username', 'password', 'password_confirm',
-            'companyName', 'fullName', 'phone', 'companySektor','city','district'
+            'companyName', 'fullName', 'phone', 'companySektor','city','district','address'
         )
     
     def validate(self, data):
@@ -142,6 +143,8 @@ class RegisterSerializer(serializers.ModelSerializer):
         if company:
             company.name = validated_data.get('companyName', company.name)
             company.sector, _ = Sector.objects.get_or_create(name=validated_data.get('companySektor', company.sector.name if company.sector else ''))
+            print("Updating company sector to:", company.sector)
+            company.address = validated_data.get('address', company.address)
             company.save()
         else:
             # Eğer kullanıcıya şirket atanmamışsa yeni oluştur
