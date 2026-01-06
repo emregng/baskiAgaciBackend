@@ -4,13 +4,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import authenticate
-from .models import User,Sector,City,District
+from .models import User,Sector,City,District,PaymentType
 from .serializers import RegisterSerializer, UserSerializer,CitySerializer,DistrictSerializer
 from django.utils import timezone
 import random
 from datetime import timedelta
-from .serializers import CitySerializer,DistrictSerializer
-
+from .serializers import CitySerializer,DistrictSerializer,send_sms,PaymentTypeSerializer
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -48,12 +47,27 @@ def login(request):
     user = authenticate(username=email, password=password)
     
     if user is not None:
-        if not user.is_active:
+        if not user.user_active:
             return Response({
                 'success': False,
-                'message': 'Hesabınız devre dışı bırakılmış'
-            }, status=status.HTTP_403_FORBIDDEN)
+                'message': 'Hesabınız değerlendirme aşamasındadır. Onay süreci tamamlandığında tarafınıza bilgilendirme yapılacaktır. Lütfen daha sonra tekrar deneyiniz.'
+            }, status=status.HTTP_400_BAD_REQUEST)
         
+        is_staff_or_superuser = user.is_superuser or user.is_staff
+
+        if not is_staff_or_superuser:
+            active_package = user.user_packages.filter(is_active=True).order_by('-end_date').first()
+            if not active_package:
+                return Response({
+                    'success': False,
+                    'message': "Aktif paketiniz bulunmamaktadır."
+                }, status=status.HTTP_403_FORBIDDEN)
+            elif active_package.end_date < timezone.now().date():
+                return Response({
+                    'success': False,
+                    'message': "Paket süreniz dolmuştur."
+                }, status=status.HTTP_403_FORBIDDEN)
+
         refresh = RefreshToken.for_user(user)
         return Response({
             'success': True,
@@ -110,12 +124,17 @@ def sektor(request):
 @permission_classes([IsAuthenticated])
 def send_sms_code(request):
     user = request.user
+    phone = request.data.get('phone') or user.phone  
     code = str(random.randint(100000, 999999))
     user.sms_code = code
     user.sms_code_created = timezone.now()
     user.save()
-    # Burada gerçek SMS gönderimi yapılmalı (ör: Twilio, Netgsm, vs.)
-    print(f"SMS code for {user.phone_number}: {code}")  # Sadece test için
+    sms_data = [{
+        'gsm_1': phone,
+        'icerik': f"Merhaba, Baskı Ağacı'na hoş geldiniz! Hesabınızı doğrulamak için onay kodunuz: {code}. Lütfen bu kodu kimseyle paylaşmayınız."
+    }]
+    send_sms(sms_data)
+    
     return Response({'success': True, 'message': 'SMS kodu gönderildi.'})
 
 
@@ -171,3 +190,18 @@ def update_profile(request):
         serializer.save()
         return Response({'success': True, 'user': UserSerializer(request.user).data})
     return Response({'success': False, 'errors': serializer.errors}, status=400)
+
+
+
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def payment_type_list(request):
+    payment_types = PaymentType.objects.filter(is_active=True).order_by('order')
+    serializer = PaymentTypeSerializer(payment_types, many=True)
+    return Response( serializer.data)
+
+
+
+

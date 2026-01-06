@@ -1,4 +1,7 @@
 from rest_framework import serializers
+
+from accounts.serializers import CompanySerializer
+from media.serializers import MediaSerializer
 from .models import CompanyMedia
 
 from rest_framework import serializers
@@ -7,12 +10,12 @@ from media.models import Media
 
 
 class CompanyMediaSerializer(serializers.ModelSerializer):
-    company = serializers.PrimaryKeyRelatedField(read_only=True)
-    media = serializers.PrimaryKeyRelatedField(read_only=True)
+    company = CompanySerializer(read_only=True)
+    media = MediaSerializer(read_only=True)
 
     class Meta:
         model = CompanyMedia
-        fields = ['id', 'company', 'media', 'status', 'status_label', 'is_active', 'order', 'created_at']
+        fields = ['id', 'company', 'media', 'status', 'status_label', 'is_active', 'order', 'created_at','reject_reason']
 
     def create(self, validated_data):
         request = self.context.get('request')

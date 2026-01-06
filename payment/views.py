@@ -12,6 +12,8 @@ import urllib
 from .models import Payment
 from packages.models import Package, UserPackage
 from datetime import datetime, timedelta,date
+from rest_framework import generics, filters
+from .serializers import PaymentSerializer
 
 
 PAYONTR_SERVICE_URL = "https://sbx-api.payon.tr/integration"
@@ -161,3 +163,25 @@ def payment_callback(request):
         payment.save()
         bank_desc_encoded = urllib.parse.quote(bank_desc)
         return redirect(f"{ERROR_PAGE_URL}?status=failed&payment_id={payment.id}&message={bank_desc_encoded}")
+    
+
+class PaymentListView(generics.ListAPIView):
+    queryset = Payment.objects.select_related('user').all()
+    serializer_class = PaymentSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['user__email', 'user__first_name', 'user__last_name']
+    ordering_fields = ['created_at', 'amount']
+    ordering = ['-created_at']
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        status = self.request.query_params.get('status')
+        print('status',status)
+        if status == 'success':
+            queryset = queryset.filter(status='success')
+        elif status == 'failed':
+            queryset = queryset.filter(status='failed')
+        
+        return queryset
+       

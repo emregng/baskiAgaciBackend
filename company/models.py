@@ -2,12 +2,18 @@ from django.db import models
 from media.models import Media
 
 # Create your models here.
+
 class Company(models.Model):
     name = models.CharField(max_length=255)
     address = models.TextField()
     phone_number = models.CharField(max_length=20)
     email = models.EmailField()
     sector = models.ForeignKey('accounts.Sector', on_delete=models.SET_NULL, related_name='companies',null=True,blank=True)
+    taxOffice = models.CharField(max_length=255, blank=True, null=True)
+    taxNumber = models.CharField(max_length=50, blank=True, null=True)
+    social_media = models.CharField(max_length=255, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.name
@@ -29,6 +35,7 @@ class CompanyMedia(models.Model):
     is_active = models.BooleanField(default=True)
     order = models.PositiveIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+    reject_reason = models.TextField(blank=True, null=True)
 
     @property
     def status_label(self):

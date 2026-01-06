@@ -4,6 +4,12 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+class PaymentType(models.Model):
+    name = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    order = models.PositiveIntegerField(default=0)
+    def __str__(self):
+        return self.name
 
 class City(models.Model):
     name = models.CharField(max_length=100)
@@ -49,11 +55,12 @@ class User(AbstractUser):
         verbose_name='User Permissions'
     )
     is_active = models.BooleanField(default=True, verbose_name='Active Status')
+    user_active = models.BooleanField(default=False, verbose_name='User Active')
     sms_code = models.CharField(max_length=6, blank=True, null=True)
     sms_code_created = models.DateTimeField(blank=True, null=True)
     is_phone_verified = models.BooleanField(default=False, verbose_name='Phone Verified')
     is_email_verified = models.BooleanField(default=False, verbose_name='Email Verified')
-    
+    payment_type = models.ForeignKey(PaymentType, on_delete=models.SET_NULL, null=True, blank=True)
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
     
